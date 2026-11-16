@@ -2,6 +2,7 @@ import { useState } from "react"
 import {
     createTask,
     Filter,
+    isBlankTitle,
     openCount,
     renameTask,
     seedTasks,
@@ -19,19 +20,28 @@ export function App() {
     const [tasks, setTasks] = useState<Task[]>(seedTasks)
     const [filter, setFilter] = useState<Filter>("all")
     const [draft, setDraft] = useState("")
+    const [error, setError] = useState("")
 
     function add() {
         const next = createTask(tasks.length + 1, draft)
-        if (next !== undefined) setTasks([...tasks, next])
+        if (next === undefined) {
+            setError("Название не может быть пустым")
+            return
+        }
+        setTasks([...tasks, next])
         setDraft("")
+        setError("")
     }
 
     function rename(task: Task) {
         const title = window.prompt("Название", task.title)
         if (title == null) return
-        // Старая форма сохраняла название без проверки; этот путь оставлен
-        // ради редактирования в один шаг, и issue #7 именно про него.
+        if (isBlankTitle(title)) {
+            setError("Название не может быть пустым")
+            return
+        }
         setTasks(renameTask(tasks, task.id, title))
+        setError("")
     }
 
     const shown = visibleTasks(tasks, filter)
@@ -42,6 +52,9 @@ export function App() {
             <p style={{ margin: "0 0 16px", color: "#555" }}>
                 Открытых: {openCount(tasks)}
             </p>
+            {error !== "" && (
+                <p style={{ margin: "0 0 16px", color: "#a00" }}>{error}</p>
+            )}
 
             <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
                 {FILTERS.map((f) => (
